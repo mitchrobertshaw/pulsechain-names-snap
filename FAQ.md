@@ -1,7 +1,8 @@
 # PulseChain Names: questions and answers
 
-PulseChain Names is a MetaMask snap: an add-on for MetaMask. Something not working? See
-[Troubleshooting](TROUBLESHOOTING.md). Still stuck? [Ask for help](#how-do-i-get-support).
+PulseChain Names is a MetaMask snap: an add-on for MetaMask. For step-by-step guides and fixes for
+common problems, see the [knowledge base](KNOWLEDGE_BASE.md). Still stuck?
+[Ask for help](#how-do-i-get-support).
 
 - [What does PulseChain Names do?](#what-does-pulsechain-names-do)
 - [What doesn't it do?](#what-doesnt-it-do)
@@ -50,7 +51,7 @@ You need MetaMask's browser extension on a computer.
    **Confirm**, then **OK**.
 4. For `.pdai` and `.pls` names, and `.hex` names on PulseChain, MetaMask needs the PulseChain
    network. If you don't have it yet, see
-   [How do I add PulseChain to MetaMask?](TROUBLESHOOTING.md#how-do-i-add-pulsechain-to-metamask)
+   [Add PulseChain to MetaMask](KNOWLEDGE_BASE.md#add-pulsechain-to-metamask).
 
 PulseChain Names appears in the directory once MetaMask has reviewed and approved it. Until then,
 it can only be installed in [MetaMask Flask](https://metamask.io/flask/), MetaMask's edition for

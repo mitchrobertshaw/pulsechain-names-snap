@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for getting in touch. The [FAQ](https://github.com/mitchrobertshaw/pulsechain-names-snap/blob/main/FAQ.md) and [troubleshooting guide](https://github.com/mitchrobertshaw/pulsechain-names-snap/blob/main/TROUBLESHOOTING.md) answer the most common questions, so they're worth a look first.
+        Thanks for getting in touch. The [FAQ](https://github.com/mitchrobertshaw/pulsechain-names-snap/blob/main/FAQ.md) and [knowledge base](https://github.com/mitchrobertshaw/pulsechain-names-snap/blob/main/KNOWLEDGE_BASE.md) answer the most common questions, so they're worth a look first.
 
         **Never share your recovery phrase or private keys.** Nobody working on PulseChain Names will ever ask for them, and anyone who does is trying to steal your funds. This page is public, so don't post anything private.
   - type: textarea
