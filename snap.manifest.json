@@ -1,13 +1,13 @@
 {
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Send to .hex, .pdai and .pls names on PulseChain, and .hex names on Ethereum, instead of 0x addresses.",
   "proposedName": "PulseChain Names",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mitchrobertshaw/pulsechain-names-snap.git"
+    "url": "git+https://github.com/mitchrobertshaw/pulsechain-names-snap.git"
   },
   "source": {
-    "shasum": "4FwEwFDvKhdo19EB7SARC/2P5v2sm+o04VCbYQjRKw0=",
+    "shasum": "ap2hnQL+oyuhnNdHw2uRfu4tBEV95jxVon17ZOUM6pQ=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",

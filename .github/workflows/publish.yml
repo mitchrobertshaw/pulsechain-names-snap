@@ -2,9 +2,12 @@ name: Publish to npm
 
 # Run by hand: Actions > Publish to npm > Run workflow. It stages the version in package.json on npm,
 # after the same checks as the tests; nothing goes live until you approve it on npmjs.com (Staged
-# Packages), with your two-factor code. Sign-in is either the NPM_TOKEN repository secret (a
-# "Read and write (stage only)" token) or, once the package exists, npm's trusted publishing for
-# this workflow, which needs no token. npm records that the package was built here (provenance).
+# Packages), with your two-factor code. It signs in with npm's trusted publishing, so it needs no
+# token: the package's settings on npmjs.com name this workflow as its Trusted Publisher. npm
+# records that the package was built here (provenance).
+#
+# npm expires a newly added Trusted Publisher if it isn't used within 2 days, so add it just before
+# the first run that uses it (see the README). Version 0.1.0 was staged with a token, since deleted.
 
 on:
   workflow_dispatch:
@@ -56,9 +59,9 @@ jobs:
       - name: Tests, including lookups of real names on PulseChain and Ethereum
         run: npm run test:live
 
+      # Trusted publishing: npm trades this run's GitHub identity (id-token: write) for a one-off
+      # sign-in.
       - name: Stage it on npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm stage publish --provenance --access public
 
       - name: Next
