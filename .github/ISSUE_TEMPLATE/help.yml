@@ -1,0 +1,42 @@
+name: Get help with PulseChain Names
+description: A name doesn't look up, something looks wrong, or you have a question.
+title: "Help: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for getting in touch. The [FAQ](https://github.com/mitchrobertshaw/pulsechain-names-snap/blob/main/FAQ.md) and [troubleshooting guide](https://github.com/mitchrobertshaw/pulsechain-names-snap/blob/main/TROUBLESHOOTING.md) answer the most common questions, so they're worth a look first.
+
+        **Never share your recovery phrase or private keys.** Nobody working on PulseChain Names will ever ask for them, and anyone who does is trying to steal your funds. This page is public, so don't post anything private.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what did MetaMask show instead?
+    validations:
+      required: true
+  - type: input
+    id: lookup
+    attributes:
+      label: Name or address you looked up
+      placeholder: mick.hex
+  - type: dropdown
+    id: network
+    attributes:
+      label: Network MetaMask was on
+      options:
+        - PulseChain
+        - Ethereum
+        - Another network
+        - Not sure
+  - type: input
+    id: metamask
+    attributes:
+      label: MetaMask version
+      description: In MetaMask, open Settings, then About.
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: A screenshot of what MetaMask showed helps a lot. Drag it in here. Cover anything private first.

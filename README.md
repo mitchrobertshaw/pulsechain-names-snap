@@ -13,6 +13,10 @@ chosen as its own (a primary name), if that name points back to the same address
 have primary names today. `.hex` and `.pdai` don't yet; the snap already asks for them, so they'll
 show as soon as those services add them.
 
+**Using it?** The [FAQ](FAQ.md) covers installing and using it, and what it does and doesn't do. If
+something isn't working, see [Troubleshooting](TROUBLESHOOTING.md), or
+[ask for help](https://github.com/mitchrobertshaw/pulsechain-names-snap/issues/new/choose).
+
 Built by [HexNS](https://hexns.domains). Building a wallet? [WALLETS.md](WALLETS.md) explains how to
 look up all three kinds of name, with the contracts and code.
 
