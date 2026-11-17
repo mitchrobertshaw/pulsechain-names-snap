@@ -1,11 +1,13 @@
-// Looks up .hex, .pdai and .pls names: name to address, and address to name. Pure logic over an
-// `eth_call` function, so it can be tested without a network (see names.test.ts).
-//
-// .hex (HexNS) and .pdai (pDAI Name Service) are ENSv2 registries: their UniversalResolverV2 answers
-// `addr(node, coinType)` for any name, through whatever resolver the owner chose (by default one that
-// answers with the owner). .hex is on PulseChain and copied to Ethereum; .pdai is on PulseChain only.
-// .pls (Pulse Domains) is an ENS v1-style registry on PulseChain: registry.resolver(node), then
-// resolver.addr(node), and reverse records under addr.reverse.
+/**
+ * Looks up .hex, .pdai and .pls names: name to address, and address to name. Pure logic over an
+ * `eth_call` function, so it can be tested without a network (see names.test.ts).
+ *
+ * .hex (HexNS) and .pdai (pDAI Name Service) are ENSv2 registries: their UniversalResolverV2 answers
+ * `addr(node, coinType)` for any name, through whatever resolver the owner chose (by default one that
+ * answers with the owner). .hex is on PulseChain and copied to Ethereum; .pdai is on PulseChain only.
+ * .pls (Pulse Domains) is an ENS v1-style registry on PulseChain: registry.resolver(node), then
+ * resolver.addr(node), and reverse records under addr.reverse.
+ */
 
 import {
   type Abi,
@@ -94,7 +96,11 @@ export const addrAbi = parseAbi(['function addr(bytes32 node) view returns (addr
 export const nameAbi = parseAbi(['function name(bytes32 node) view returns (string)']);
 export const registryAbi = parseAbi(['function resolver(bytes32 node) view returns (address)']);
 
-/** A name in its normalized form (ENSIP-15), or null if it isn't a valid name with an ending. */
+/**
+ * A name in its normalized form (ENSIP-15), so `MICK.hex` becomes `mick.hex`.
+ * @param input - The name as typed.
+ * @returns The normalized name, or null if it isn't a valid name with an ending.
+ */
 export function normalizedName(input: string): string | null {
   let name: string;
   try {
@@ -107,13 +113,22 @@ export function normalizedName(input: string): string | null {
   return name;
 }
 
-/** The service a normalized name belongs to, by its ending. */
+/**
+ * The service a name belongs to, by its ending.
+ * @param name - A normalized name.
+ * @returns The service for its ending, or undefined for an ending the snap doesn't look up.
+ */
 export function serviceFor(name: string): Service | undefined {
   const tld = name.slice(name.lastIndexOf('.') + 1);
   return SERVICES.find((service) => service.tld === tld);
 }
 
-/** A name in DNS wire format, as UniversalResolverV2 takes it. */
+/**
+ * A name in DNS wire format, as UniversalResolverV2 takes it.
+ * @param name - A normalized name.
+ * @returns The name in DNS wire format.
+ * @throws If a label is empty or longer than 255 bytes.
+ */
 export function dnsEncode(name: string): Hex {
   const out: number[] = [];
   for (const label of name.split('.')) {
@@ -125,27 +140,50 @@ export function dnsEncode(name: string): Hex {
   return bytesToHex(Uint8Array.from(out));
 }
 
-/** The coin types to ask for, best first: PulseChain's own, then any EVM chain's, then Ethereum's. */
+/**
+ * The coin types to ask for, best first.
+ * @param chain - The chain the address is for.
+ * @returns On PulseChain: PulseChain's own, then any EVM chain's, then Ethereum's. On Ethereum:
+ * Ethereum's.
+ */
 export function coinTypesFor(chain: Chain): bigint[] {
   return chain === PULSECHAIN ? [COIN_TYPE_PULSECHAIN, COIN_TYPE_DEFAULT, COIN_TYPE_ETH] : [COIN_TYPE_ETH];
 }
 
-/** Decodes a call's result, or null if it isn't what the function returns. */
-function decode<T>(abi: Abi, functionName: string, data: Hex): T | null {
+/**
+ * Decodes a call's result.
+ * @param abi - The ABI with the function that was called.
+ * @param functionName - The function that was called.
+ * @param data - What the call returned.
+ * @returns The decoded result, or null if it isn't what the function returns.
+ */
+function decode<Result>(abi: Abi, functionName: string, data: Hex): Result | null {
   try {
-    return decodeFunctionResult({ abi, functionName, data }) as T;
+    return decodeFunctionResult({ abi, functionName, data }) as Result;
   } catch {
     return null;
   }
 }
 
-/** An address as a resolver gives it (20 bytes), or null for none or the zero address. */
+/**
+ * An address as a resolver gives it.
+ * @param raw - The resolver's answer: 20 bytes, or nothing.
+ * @returns The address, checksummed, or null for none or the zero address.
+ */
 function addressFrom(raw: Hex | null | undefined): Address | null {
   if (!raw || !isAddress(raw, { strict: false })) return null;
   const address = getAddress(raw);
   return address === zeroAddress ? null : address;
 }
 
+/**
+ * Name to address for an ENSv2 service, through its UniversalResolverV2.
+ * @param call - Makes an `eth_call`.
+ * @param chain - The chain to look on.
+ * @param service - The service the name belongs to.
+ * @param name - A normalized name.
+ * @returns The first address the name gives for the chain's coin types, or null.
+ */
 async function universalAddress(call: Call, chain: Chain, service: UniversalService, name: string): Promise<Address | null> {
   const universalResolver = service.universalResolvers[chain];
   if (!universalResolver) return null;
@@ -168,11 +206,30 @@ async function universalAddress(call: Call, chain: Chain, service: UniversalServ
   return null;
 }
 
+/**
+ * Reads an address from a contract function that takes a name's node.
+ * @param call - Makes an `eth_call`.
+ * @param chain - The chain to read on.
+ * @param to - The contract.
+ * @param abi - The ABI with the function.
+ * @param functionName - The function, `resolver` or `addr`.
+ * @param node - The name's node (namehash).
+ * @returns The address, or null for none, the zero address, or a revert.
+ */
 async function readAddress(call: Call, chain: Chain, to: Address, abi: Abi, functionName: string, node: Hex): Promise<Address | null> {
   const result = await call(chain, to, encodeFunctionData({ abi, functionName, args: [node] }));
   return result.reverted ? null : addressFrom(decode<Address>(abi, functionName, result.data));
 }
 
+/**
+ * Name to address for an ENS v1-style service: the registry gives the resolver, and the resolver
+ * the address.
+ * @param call - Makes an `eth_call`.
+ * @param chain - The chain to look on.
+ * @param service - The service the name belongs to.
+ * @param name - A normalized name.
+ * @returns The address, or null.
+ */
 async function registryAddress(call: Call, chain: Chain, service: RegistryService, name: string): Promise<Address | null> {
   if (chain !== service.chain) return null;
   const node = namehash(name);
@@ -182,7 +239,13 @@ async function registryAddress(call: Call, chain: Chain, service: RegistryServic
 
 export type Resolved = { address: Address; name: string; protocol: string };
 
-/** Name to address: what `name` points to on `chain`, or null. */
+/**
+ * Name to address.
+ * @param call - Makes an `eth_call`.
+ * @param chain - The chain to look on.
+ * @param input - The name as typed.
+ * @returns What the name points to on the chain, with its normalized form and service, or null.
+ */
 export async function resolveName(call: Call, chain: Chain, input: string): Promise<Resolved | null> {
   const name = normalizedName(input);
   const service = name ? serviceFor(name) : undefined;
@@ -194,7 +257,16 @@ export async function resolveName(call: Call, chain: Chain, input: string): Prom
   return address ? { address, name, protocol: service.protocol } : null;
 }
 
-/** A primary name, if it's a valid name of `service` that really points back to `address`. */
+/**
+ * Checks a primary name both ways.
+ * @param call - Makes an `eth_call`.
+ * @param chain - The chain to look on.
+ * @param service - The service whose primary name it is.
+ * @param address - The address the primary name was set for.
+ * @param primary - The primary name, as the service gave it.
+ * @returns The name, if it's a valid name of the service that really points back to the address;
+ * otherwise null.
+ */
 async function verified(call: Call, chain: Chain, service: Service, address: Address, primary: string | null): Promise<string | null> {
   if (!primary) return null;
   const name = normalizedName(primary);
@@ -203,6 +275,14 @@ async function verified(call: Call, chain: Chain, service: Service, address: Add
   return forward?.address === address ? name : null;
 }
 
+/**
+ * An address's primary name for an ENSv2 service, through its UniversalResolverV2.
+ * @param call - Makes an `eth_call`.
+ * @param chain - The chain to look on.
+ * @param service - The service.
+ * @param address - The address.
+ * @returns The primary name, not yet checked forward, or null.
+ */
 async function universalPrimary(call: Call, chain: Chain, service: UniversalService, address: Address): Promise<string | null> {
   const universalResolver = service.universalResolvers[chain];
   if (!universalResolver) return null;
@@ -217,6 +297,15 @@ async function universalPrimary(call: Call, chain: Chain, service: UniversalServ
   return primary ? primary[0] : null;
 }
 
+/**
+ * An address's primary name for an ENS v1-style service, from its reverse record under
+ * `addr.reverse`.
+ * @param call - Makes an `eth_call`.
+ * @param chain - The chain to look on.
+ * @param service - The service.
+ * @param address - The address.
+ * @returns The primary name, not yet checked forward, or null.
+ */
 async function registryPrimary(call: Call, chain: Chain, service: RegistryService, address: Address): Promise<string | null> {
   if (chain !== service.chain) return null;
   const node = namehash(`${address.slice(2).toLowerCase()}.addr.reverse`);
@@ -228,7 +317,13 @@ async function registryPrimary(call: Call, chain: Chain, service: RegistryServic
 
 export type Named = { name: string; protocol: string };
 
-/** Address to name: each service's primary name for `address` on `chain`, checked both ways. */
+/**
+ * Address to name.
+ * @param call - Makes an `eth_call`.
+ * @param chain - The chain to look on.
+ * @param input - The address.
+ * @returns Each service's primary name for the address on the chain, checked both ways.
+ */
 export async function lookupAddress(call: Call, chain: Chain, input: string): Promise<Named[]> {
   if (!isAddress(input, { strict: false })) return [];
   const address = getAddress(input);

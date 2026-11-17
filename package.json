@@ -1,10 +1,10 @@
 {
   "name": "pulsechain-names-snap",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Type .hex, .pdai and .pls names in MetaMask's send screen on PulseChain, and .hex names on Ethereum.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mitchrobertshaw/pulsechain-names-snap.git"
+    "url": "git+https://github.com/mitchrobertshaw/pulsechain-names-snap.git"
   },
   "homepage": "https://github.com/mitchrobertshaw/pulsechain-names-snap#readme",
   "bugs": {

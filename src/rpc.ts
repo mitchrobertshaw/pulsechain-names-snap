@@ -24,30 +24,45 @@ type Fetch = (url: string, init: { method: string; headers: Record<string, strin
   json(): Promise<unknown>;
 }>;
 
-type RpcReply = { result?: unknown; error?: { code?: number; message?: string } };
+type RpcError = { code?: number; message?: string };
 
-/** Whether a JSON-RPC error means the contract reverted (as opposed to the server failing). */
-export function isRevert(error: { code?: number; message?: string }): boolean {
+type RpcReply = { result?: unknown; error?: RpcError };
+
+/**
+ * Whether a JSON-RPC error means the contract reverted, as opposed to the server failing.
+ * @param error - The `error` of a JSON-RPC reply.
+ * @returns True for a revert.
+ */
+export function isRevert(error: RpcError): boolean {
   return error.code === 3 || /revert/iu.test(error.message ?? '');
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`No answer within ${ms} ms`)), ms);
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error: unknown) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
+/**
+ * Waits for a promise, but only for so long.
+ * @param promise - What to wait for.
+ * @param ms - How long to wait, in milliseconds.
+ * @returns What the promise gives.
+ * @throws If the promise fails, or doesn't settle in time.
+ */
+async function withTimeout<Value>(promise: Promise<Value>, ms: number): Promise<Value> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(`No answer within ${ms} ms`)), ms);
   });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-/** An `eth_call` function over `fetch`, for `names.ts`. */
+/**
+ * An `eth_call` function over `fetch`, for `names.ts`.
+ * @param fetchFn - Makes HTTP requests: `fetch`, or a stand-in in tests.
+ * @param urls - The RPC servers for each chain, tried in order.
+ * @param timeoutMs - How long to wait for each server, in milliseconds.
+ * @returns A function that makes an `eth_call` on a chain, trying the next server when one fails.
+ */
 export function makeCall(fetchFn: Fetch, urls: Record<Chain, readonly string[]> = RPC_URLS, timeoutMs = TIMEOUT_MS): Call {
   return async (chain: Chain, to: Address, data: Hex): Promise<CallResult> => {
     let lastError: unknown = new Error(`No RPC server for ${chain}`);
