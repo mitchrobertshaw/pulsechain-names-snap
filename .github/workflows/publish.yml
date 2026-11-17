@@ -1,8 +1,10 @@
 name: Publish to npm
 
-# Run by hand: Actions > Publish to npm > Run workflow. It needs the NPM_TOKEN repository secret
-# (README: "Getting it into MetaMask"). It publishes the version in package.json, after the same
-# checks as the tests, and records on npm that the package was built here (provenance).
+# Run by hand: Actions > Publish to npm > Run workflow. It stages the version in package.json on npm,
+# after the same checks as the tests; nothing goes live until you approve it on npmjs.com (Staged
+# Packages), with your two-factor code. Sign-in is either the NPM_TOKEN repository secret (a
+# "Read and write (stage only)" token) or, once the package exists, npm's trusted publishing for
+# this workflow, which needs no token. npm records that the package was built here (provenance).
 
 on:
   workflow_dispatch:
@@ -13,7 +15,7 @@ permissions:
 
 jobs:
   publish:
-    name: Publish to npm
+    name: Stage on npm
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -24,14 +26,9 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
-      - name: The npm token is set
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::error::Add the NPM_TOKEN repository secret first (README: Getting it into MetaMask)."
-            exit 1
-          fi
+      # Staged publishing needs npm 11.15 or later; Node 22 comes with npm 10.
+      - name: Update npm
+        run: npm install -g npm@11 && npm --version
 
       - name: The versions match, and this one isn't on npm yet
         run: |
@@ -46,7 +43,7 @@ jobs:
             echo "::error::$name $version is already on npm: raise the version in both files first."
             exit 1
           fi
-          echo "Publishing $name $version"
+          echo "Staging $name $version"
 
       - run: npm ci
 
@@ -59,7 +56,11 @@ jobs:
       - name: Tests, including lookups of real names on PulseChain and Ethereum
         run: npm run test:live
 
-      - name: Publish
+      - name: Stage it on npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public
+        run: npm stage publish --provenance --access public
+
+      - name: Next
+        run: |
+          echo "::notice::Staged. To publish it, open npmjs.com, then Staged Packages, check it and click Approve (you'll be asked for your two-factor code)."

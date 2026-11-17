@@ -92,14 +92,21 @@ A snap that looks names up needs MetaMask's approval before regular MetaMask can
 doesn't need an audit: that's only for snaps that handle keys.
 
 1. **Public source code.** MetaMask asks that anyone can read the snap's source: this repository.
-2. **Publish it to npm**, from GitHub, with no command line:
-   - Make an account at [npmjs.com](https://www.npmjs.com) and create an access token that can
-     publish packages from GitHub (npm's Access Tokens page explains the options).
+2. **Publish it to npm**, from GitHub, with no command line. npm's staged publishing puts each
+   version on hold until you approve it, so nothing goes live without you:
+   - Make an account at [npmjs.com](https://www.npmjs.com) with two-factor authentication on, and
+     create a granular access token with **Read and write (stage only)** permission for all
+     packages.
    - In this repository on GitHub, open Settings, then Secrets and variables, then Actions, and add
      a repository secret named `NPM_TOKEN` with the token as its value.
-   - Then open Actions, choose **Publish to npm**, and click **Run workflow**. It builds the snap,
-     checks the manifest matches the build, runs every test, and publishes
-     `pulsechain-names-snap` with its source (`src/`) and the bundle.
+   - Open Actions, choose **Publish to npm**, and click **Run workflow**. It builds the snap,
+     checks the manifest matches the build, runs every test, and stages `pulsechain-names-snap`
+     with its source (`src/`) and the bundle.
+   - On npmjs.com, open **Staged Packages**, check the version and click **Approve**, with your
+     two-factor code. It's then public.
+   - Once the package exists, add this workflow (`publish.yml` in `mitchrobertshaw/pulsechain-names-snap`)
+     as a **Trusted Publisher** in the package's settings on npmjs.com. Later versions then need no
+     token, so you can delete it and the `NPM_TOKEN` secret.
 3. **Scan it** with [Snapper](https://github.com/sayfer-io/Snapper), which MetaMask asks for, and fix
    anything it reports.
 4. **Ask for approval** with the
@@ -111,4 +118,5 @@ doesn't need an audit: that's only for snaps that handle keys.
 5. **Review.** MetaMask's Snaps team reviews it (two approvals). Once allowlisted, it appears in the
    [Snaps Directory](https://snaps.metamask.io), and the websites can offer an install button.
 6. **Updates.** Raise `version` in both `package.json` and `snap.manifest.json`, run **Publish to
-   npm** again, and ask MetaMask to approve the new version with their update form.
+   npm** again, approve it under Staged Packages, and ask MetaMask to approve the new version with
+   their update form.
