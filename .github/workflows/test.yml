@@ -1,0 +1,33 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  snap:
+    name: Snap
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type check and build
+        run: npm run typecheck && npm run build
+
+      # mm-snap build quietly corrects the manifest's shasum. A change here means snap.manifest.json
+      # wasn't updated after the code or the icon changed: run npm run build and commit it.
+      - name: The committed manifest matches the build
+        run: git diff --exit-code snap.manifest.json
+
+      - name: Tests, including lookups of real names on PulseChain and Ethereum
+        run: npm run test:live

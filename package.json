@@ -1,0 +1,43 @@
+{
+  "name": "pulsechain-names-snap",
+  "version": "0.1.0",
+  "description": "Type .hex, .pdai and .pls names in MetaMask's send screen on PulseChain, and .hex names on Ethereum.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mitchrobertshaw/pulsechain-names-snap.git"
+  },
+  "homepage": "https://github.com/mitchrobertshaw/pulsechain-names-snap#readme",
+  "bugs": {
+    "url": "https://github.com/mitchrobertshaw/pulsechain-names-snap/issues"
+  },
+  "license": "MIT",
+  "main": "./dist/bundle.js",
+  "files": [
+    "dist/",
+    "images/",
+    "src/",
+    "snap.manifest.json"
+  ],
+  "scripts": {
+    "build": "mm-snap build",
+    "serve": "mm-snap serve",
+    "sandbox": "mm-snap sandbox",
+    "start": "mm-snap watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "test:live": "LIVE=1 vitest run"
+  },
+  "dependencies": {
+    "@metamask/snaps-sdk": "^12.1.0",
+    "viem": "^2.57.0"
+  },
+  "devDependencies": {
+    "@metamask/snaps-cli": "^8.4.1",
+    "@metamask/snaps-simulation": "^4.3.2",
+    "typescript": "^5.6.3",
+    "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

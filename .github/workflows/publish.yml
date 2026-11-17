@@ -1,0 +1,65 @@
+name: Publish to npm
+
+# Run by hand: Actions > Publish to npm > Run workflow. It needs the NPM_TOKEN repository secret
+# (README: "Getting it into MetaMask"). It publishes the version in package.json, after the same
+# checks as the tests, and records on npm that the package was built here (provenance).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: The npm token is set
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error::Add the NPM_TOKEN repository secret first (README: Getting it into MetaMask)."
+            exit 1
+          fi
+
+      - name: The versions match, and this one isn't on npm yet
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          manifest=$(node -p "require('./snap.manifest.json').version")
+          if [ "$version" != "$manifest" ]; then
+            echo "::error::package.json says $version but snap.manifest.json says $manifest."
+            exit 1
+          fi
+          if npm view "$name@$version" version > /dev/null 2>&1; then
+            echo "::error::$name $version is already on npm: raise the version in both files first."
+            exit 1
+          fi
+          echo "Publishing $name $version"
+
+      - run: npm ci
+
+      - name: Type check and build
+        run: npm run typecheck && npm run build
+
+      - name: The committed manifest matches the build
+        run: git diff --exit-code snap.manifest.json
+
+      - name: Tests, including lookups of real names on PulseChain and Ethereum
+        run: npm run test:live
+
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
